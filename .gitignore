@@ -1,0 +1,40 @@
+ # Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# API Keys (CRITICAL - Never commit!)
+config.json
+*.key
+.env
+secrets/
+**/config.json
+
+# GIMP
+*.xcf.bak
+*.xcf~
+
+# Testing
+test_output/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+temp/
+tmp/
+cache/
