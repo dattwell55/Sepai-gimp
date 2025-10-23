@@ -48,3 +48,4 @@ GPL v3 - See LICENSE file
 Built with ❤️ for the screen printing community
 
 Powered by Google Gemini AI 
+
