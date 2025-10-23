@@ -22,4 +22,4 @@ All notable changes to SepAI will be documented in this file.
 
 ### Added
 - Repository setup
-- Project skeleton
+- Project skeleton=
