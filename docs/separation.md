@@ -808,19 +808,32 @@ class SeparationDialog(Gtk.Dialog):
             
             self.params_vbox.pack_start(hbox, False, False, 0)
         
+        elif method.method == SeparationMethod.SIMULATED_PROCESS:
+            # Halftone method
+            hbox = Gtk.HBox(spacing=12)
+            hbox.pack_start(Gtk.Label(label="Halftone Method:"), False, False, 0)
+
+            self.halftone_combo = Gtk.ComboBoxText()
+            self.halftone_combo.append_text("Stochastic")
+            self.halftone_combo.append_text("Error Diffusion")
+            self.halftone_combo.set_active(0)
+            hbox.pack_start(self.halftone_combo, True, True, 0)
+
+            self.params_vbox.pack_start(hbox, False, False, 0)
+
         elif method.method == SeparationMethod.INDEX_COLOR:
             # Dither method
             hbox = Gtk.HBox(spacing=12)
             hbox.pack_start(Gtk.Label(label="Dither Method:"), False, False, 0)
-            
+
             self.dither_combo = Gtk.ComboBoxText()
             self.dither_combo.append_text("Floyd-Steinberg")
             self.dither_combo.append_text("None")
             self.dither_combo.set_active(0)
             hbox.pack_start(self.dither_combo, True, True, 0)
-            
+
             self.params_vbox.pack_start(hbox, False, False, 0)
-        
+
         self.params_vbox.show_all()
     
     def on_method_changed(self, radio, method):
@@ -1668,26 +1681,4 @@ The Separation module completes the AI Color Separation plugin trilogy:
 
 ---
 
-*End of Separation Module Specification v1.0-GIMP*d == SeparationMethod.SIMULATED_PROCESS:
-            # Halftone method
-            hbox = Gtk.HBox(spacing=12)
-            hbox.pack_start(Gtk.Label(label="Halftone Method:"), False, False, 0)
-            
-            self.halftone_combo = Gtk.ComboBoxText()
-            self.halftone_combo.append_text("Stochastic")
-            self.halftone_combo.append_text("Error Diffusion")
-            self.halftone_combo.set_active(0)
-            hbox.pack_start(self.halftone_combo, True, True, 0)
-            
-            self.params_vbox.pack_start(hbox, False, False, 0)
-        
-        elif method.methodself.halftone_combo = Gtk.ComboBoxText()
-        self.halftone_combo.append_text("Stochastic")
-        self.halftone_combo.append_text("Error Diffusion")
-        self.halftone_combo.set_active(0)
-        hbox.pack_start(self.halftone_combo, True, True, 0)
-        
-        self.params_vbox.pack_start(hbox, False, False, 0)
-    
-    elif method.method
-    
+*End of Separation Module Specification v1.0-GIMP*
