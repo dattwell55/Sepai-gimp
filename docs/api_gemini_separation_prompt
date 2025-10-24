@@ -1,0 +1,817 @@
+# Gemini API Prompt Specification - Separation Method Recommendation
+**Version:** 1.0  
+**Date:** January 2025  
+**Purpose:** AI Call #1 - Recommend optimal color separation method
+
+---
+
+## Overview
+
+This document defines the prompt structure and response format for Gemini AI to analyze image characteristics and recommend the optimal color separation method for screen printing.
+
+---
+
+## Prompt Template
+
+### System Context
+
+```python
+SYSTEM_CONTEXT = """You are an expert screen printing color separation consultant with 20+ years of experience. Your role is to analyze digital artwork and recommend the optimal separation method based on:
+
+1. Image characteristics (edges, gradients, texture, complexity)
+2. Color palette composition (count, relationships, Pantone matches)
+3. Print requirements (quality, cost, complexity, substrate)
+4. Screen printing best practices
+
+You have deep knowledge of:
+- Spot color separation (flat colors, logos, vector art)
+- Simulated process (photographic content, complex gradients)
+- Index color (balanced quality and cost)
+- CMYK process (standard commercial printing)
+- Hybrid AI methods (region-based intelligent separation)
+
+Your recommendations prioritize:
+1. Print quality and color accuracy
+2. Production efficiency and cost
+3. Printer skill level required
+4. Substrate compatibility"""
+```
+
+### Main Prompt Structure
+
+```python
+def build_recommendation_prompt(
+    color_count: int,
+    palette_colors: List[Dict],
+    image_characteristics: Dict,
+    print_requirements: Dict = None
+) -> str:
+    """
+    Build the complete prompt for Gemini method recommendation
+    
+    Args:
+        color_count: Number of colors in palette
+        palette_colors: List of color dicts with rgb, lab, pantone, name
+        image_characteristics: Dict from Analyze unit
+        print_requirements: Optional user requirements
+        
+    Returns:
+        Formatted prompt string
+    """
+    
+    # Format palette summary (first 6 colors)
+    palette_details = []
+    for i, color in enumerate(palette_colors[:6]):
+        pantone = f"Pantone {color.get('pantone_code', 'N/A')}" if color.get('pantone_code') else "No Pantone match"
+        palette_details.append(
+            f"  {i+1}. {color['name']}: RGB{tuple(color['rgb'])} - {pantone}"
+        )
+    
+    if color_count > 6:
+        palette_details.append(f"  ... and {color_count - 6} more colors")
+    
+    palette_summary = "\n".join(palette_details)
+    
+    # Format image characteristics
+    edge_type = image_characteristics.get('edge_type', 'unknown')
+    has_gradients = image_characteristics.get('has_gradients', False)
+    texture_type = image_characteristics.get('texture_type', 'unknown')
+    line_work_score = image_characteristics.get('line_work_score', 0.5)
+    total_colors = image_characteristics.get('total_colors', 0)
+    complexity = image_characteristics.get('complexity', 0.5)
+    halftone_detected = image_characteristics.get('halftone_detected', False)
+    
+    # Build the prompt
+    prompt = f"""Analyze this artwork for screen printing color separation and recommend the best method.
+
+## IMAGE ANALYSIS DATA
+
+**Color Palette:**
+- Total Colors: {color_count}
+{palette_summary}
+
+**Image Characteristics:**
+- Edge Type: {edge_type} (sharp/soft/mixed)
+- Gradients Present: {"Yes" if has_gradients else "No"}
+- Texture Type: {texture_type} (photo/illustration/vector/mixed)
+- Line Work Score: {line_work_score:.2f} (0.0 = none, 1.0 = heavy)
+- Total Unique Colors in Image: {total_colors:,}
+- Color Complexity: {complexity:.2f} (0.0 = simple, 1.0 = complex)
+- Halftone Already Present: {"Yes" if halftone_detected else "No"}
+
+"""
+    
+    # Add print requirements if provided
+    if print_requirements:
+        prompt += f"""**Print Requirements:**
+- Target Substrate: {print_requirements.get('substrate', 'Not specified')}
+- Quality Priority: {print_requirements.get('quality_priority', 'Balanced')}
+- Budget Constraint: {print_requirements.get('budget', 'Not specified')}
+- Printer Skill Level: {print_requirements.get('skill_level', 'Not specified')}
+
+"""
+    
+    prompt += """## AVAILABLE SEPARATION METHODS
+
+### 1. SPOT COLOR SEPARATION
+**Best For:** Logos, graphics, text, vector art with 2-6 solid colors
+**Characteristics:**
+- One screen per color
+- Perfect color accuracy (Pantone matching)
+- Sharp, crisp edges
+- No halftone screens needed for solid areas
+- Low printing cost
+- Simple setup and registration
+
+**Ideal When:**
+- ≤6 colors in palette
+- Sharp edges (edge_type: "sharp")
+- No gradients or minimal gradients
+- High line work score (>0.7)
+- Vector or illustration texture type
+- Colors have Pantone matches
+
+**Avoid When:**
+- >8 colors needed
+- Photographic content
+- Heavy gradients present
+- Soft edges required
+
+---
+
+### 2. SIMULATED PROCESS SEPARATION
+**Best For:** Photographs, complex artwork, fine art prints with 4-12 colors
+**Characteristics:**
+- Uses halftone screens for each color
+- Photorealistic quality possible
+- Excellent gradient handling
+- Custom color matching to palette
+- Requires skilled printer
+- Higher setup complexity
+
+**Ideal When:**
+- Texture type is "photo" or "mixed"
+- Gradients present
+- Soft or mixed edge types
+- 4-12 colors in palette
+- High color complexity (>0.6)
+- Quality is priority over cost
+
+**Avoid When:**
+- Simple flat color artwork
+- Budget is very limited
+- Printer lacks experience
+- <4 colors in palette
+
+---
+
+### 3. INDEX COLOR SEPARATION
+**Best For:** Illustrations, posters, balanced quality/cost with 6-12 colors
+**Characteristics:**
+- Quantizes image to palette colors
+- Optional dithering for gradients
+- Moderate quality
+- Good cost-to-quality ratio
+- Moderate printing complexity
+
+**Ideal When:**
+- 6-12 colors in palette
+- Mixed texture type
+- Some gradients but not heavy
+- Budget and quality both important
+- Illustration or mixed content
+
+**Avoid When:**
+- <4 colors (use spot color)
+- Heavy photographic content (use simulated)
+- Solid flat colors only (use spot)
+
+---
+
+### 4. CMYK PROCESS
+**Best For:** Standard 4-color commercial printing
+**Characteristics:**
+- Always exactly 4 colors (Cyan, Magenta, Yellow, Black)
+- Industry standard
+- Good for general full-color photos
+- Limited gamut compared to custom inks
+
+**Ideal When:**
+- Standard commercial printing required
+- No specific Pantone colors needed
+- Photo content
+- Printer familiar with CMYK
+
+**Avoid When:**
+- Custom palette colors needed
+- Spot color accuracy required
+- >4 custom colors in palette
+
+---
+
+### 5. RGB SEPARATION (RARELY RECOMMENDED)
+**Best For:** Experimental or special applications only
+**Characteristics:**
+- Simple 3-color separation (Red, Green, Blue)
+- Poor color accuracy for screen printing
+- Not screen printing standard
+- Limited use cases
+
+**Only Consider When:**
+- Experimental/artistic purposes
+- No other method suitable
+- Special substrate (light-reactive inks, etc.)
+
+---
+
+### 6. HYBRID AI SEPARATION (ADVANCED)
+**Best For:** Complex images with both vector and photographic elements
+**Characteristics:**
+- AI analyzes image regions
+- Applies different methods per region
+- Spot color for vector areas, simulated for photos
+- Blends edges intelligently
+- Most complex to execute
+- Highest quality potential
+
+**Ideal When:**
+- Mixed texture type confirmed
+- Both high line work AND gradients present
+- Complex composition (text + photos)
+- Quality is absolute priority
+- Printer is highly skilled
+
+**Avoid When:**
+- Image is predominantly one type
+- Simple artwork
+- Budget constrained
+- Setup time limited
+
+---
+
+## YOUR TASK
+
+Analyze the image data above and provide a comprehensive recommendation following this exact JSON structure:
+
+```json
+{
+  "primary_recommendation": {
+    "method": "spot_color",
+    "method_display_name": "Spot Color Separation",
+    "score": 95,
+    "confidence": 0.95,
+    "reasoning": "2-3 sentence explanation of why this is the best choice based on the specific image characteristics. Reference specific data points like edge type, gradient presence, color count, etc.",
+    "key_strengths": [
+      "Specific strength related to this image",
+      "Another specific advantage",
+      "Cost or quality benefit"
+    ],
+    "limitations": [
+      "Specific limitation for this image",
+      "Potential challenge"
+    ],
+    "best_for_summary": "One sentence describing ideal use case",
+    "expected_results": {
+      "channel_count": 4,
+      "quality_rating": "excellent",
+      "print_complexity": "low",
+      "relative_cost": "low",
+      "setup_time": "quick"
+    },
+    "technical_notes": {
+      "halftone_frequency": 55,
+      "recommended_angles": [45, 60, 75, 90],
+      "screen_mesh": "110-156",
+      "ink_type": "plastisol or water-based"
+    }
+  },
+  
+  "alternative_1": {
+    "method": "simulated_process",
+    "method_display_name": "Simulated Process",
+    "score": 75,
+    "confidence": 0.75,
+    "reasoning": "Brief explanation of why this is second choice",
+    "key_strengths": ["...", "..."],
+    "limitations": ["...", "..."],
+    "expected_results": {
+      "channel_count": 6,
+      "quality_rating": "excellent",
+      "print_complexity": "high",
+      "relative_cost": "medium-high"
+    }
+  },
+  
+  "alternative_2": {
+    "method": "index_color",
+    "method_display_name": "Index Color",
+    "score": 65,
+    "confidence": 0.65,
+    "reasoning": "Brief explanation of why this is third choice",
+    "key_strengths": ["...", "..."],
+    "limitations": ["...", "..."],
+    "expected_results": {
+      "channel_count": 4,
+      "quality_rating": "good",
+      "print_complexity": "moderate",
+      "relative_cost": "medium"
+    }
+  },
+  
+  "methods_not_recommended": [
+    {
+      "method": "cmyk",
+      "reason": "Specific reason why not suitable (e.g., 'Custom palette colors would not be utilized')"
+    },
+    {
+      "method": "rgb",
+      "reason": "Not suitable for screen printing this type of artwork"
+    }
+  ],
+  
+  "overall_analysis": "2-3 sentence summary of the image's separation needs and your confidence in the primary recommendation. Mention any special considerations or warnings.",
+  
+  "printer_tips": [
+    "Specific tip for executing this separation",
+    "Registration or color matching advice",
+    "Substrate or ink recommendation"
+  ]
+}
+```
+
+## CRITICAL REQUIREMENTS
+
+1. **Be Specific**: Reference actual data points from the analysis (e.g., "The sharp edge type and 4-color palette...")
+2. **Be Decisive**: Give a clear primary recommendation with confidence >0.80 if analysis is clear
+3. **Be Honest**: If image characteristics are borderline, lower confidence and explain trade-offs
+4. **Be Practical**: Consider real-world printing constraints (cost, time, skill)
+5. **Use Exact Method Names**: spot_color, simulated_process, index_color, cmyk, rgb, hybrid_ai
+6. **Score Appropriately**: 
+   - 90-100: Ideal match, clear winner
+   - 75-89: Good match, solid choice
+   - 60-74: Acceptable, has trade-offs
+   - <60: Not recommended
+
+Provide your analysis now in valid JSON format."""
+
+    return prompt
+```
+
+---
+
+## Response Parsing
+
+### Parse JSON Response
+
+```python
+import json
+import re
+from typing import Dict, Optional
+
+def parse_gemini_response(response_text: str) -> Optional[Dict]:
+    """
+    Parse Gemini's response and extract JSON
+    
+    Args:
+        response_text: Raw response from Gemini API
+        
+    Returns:
+        Parsed dictionary or None if parsing fails
+    """
+    try:
+        # Try direct JSON parse first
+        return json.loads(response_text)
+    except json.JSONDecodeError:
+        # Extract JSON from markdown code blocks
+        json_pattern = r'```json\s*(.*?)\s*```'
+        match = re.search(json_pattern, response_text, re.DOTALL)
+        
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError:
+                pass
+        
+        # Try to find any JSON object
+        json_pattern = r'\{.*\}'
+        match = re.search(json_pattern, response_text, re.DOTALL)
+        
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                pass
+        
+        return None
+
+def validate_response(response_data: Dict) -> bool:
+    """
+    Validate that response has required fields
+    
+    Args:
+        response_data: Parsed JSON response
+        
+    Returns:
+        True if valid, False otherwise
+    """
+    required_fields = [
+        'primary_recommendation',
+        'alternative_1',
+        'alternative_2'
+    ]
+    
+    for field in required_fields:
+        if field not in response_data:
+            return False
+    
+    # Validate primary recommendation structure
+    primary = response_data['primary_recommendation']
+    required_primary_fields = [
+        'method',
+        'score',
+        'confidence',
+        'reasoning',
+        'expected_results'
+    ]
+    
+    for field in required_primary_fields:
+        if field not in primary:
+            return False
+    
+    return True
+```
+
+---
+
+## Example Prompt & Response
+
+### Example Input Data
+
+```python
+example_input = {
+    'color_count': 4,
+    'palette_colors': [
+        {
+            'name': 'Bright Red',
+            'rgb': [255, 0, 0],
+            'lab': [53.24, 80.09, 67.20],
+            'pantone_code': '185 C'
+        },
+        {
+            'name': 'Navy Blue',
+            'rgb': [0, 32, 96],
+            'lab': [15.21, 18.50, -45.67],
+            'pantone_code': '281 C'
+        },
+        {
+            'name': 'Gold',
+            'rgb': [255, 200, 0],
+            'lab': [82.15, 0.92, 85.23],
+            'pantone_code': '109 C'
+        },
+        {
+            'name': 'Black',
+            'rgb': [0, 0, 0],
+            'lab': [0, 0, 0],
+            'pantone_code': 'Black C'
+        }
+    ],
+    'image_characteristics': {
+        'edge_type': 'sharp',
+        'has_gradients': False,
+        'texture_type': 'vector',
+        'line_work_score': 0.92,
+        'total_colors': 847,
+        'complexity': 0.35,
+        'halftone_detected': False
+    }
+}
+```
+
+### Expected Response
+
+```json
+{
+  "primary_recommendation": {
+    "method": "spot_color",
+    "method_display_name": "Spot Color Separation",
+    "score": 96,
+    "confidence": 0.96,
+    "reasoning": "This artwork is ideal for spot color separation. With only 4 colors, all having excellent Pantone matches, sharp vector edges (edge_type: sharp), high line work score (0.92), and no gradients, spot color will deliver perfect color accuracy with minimal printing complexity. The low color complexity (0.35) and vector texture type confirm this is traditional logo/graphic work where spot color excels.",
+    "key_strengths": [
+      "Perfect Pantone color matching - all 4 colors have exact matches (185 C, 281 C, 109 C, Black C)",
+      "Sharp edges will print clean without halftone artifacts",
+      "Low cost - only 4 screens needed",
+      "Simple registration and setup",
+      "Fast production speed"
+    ],
+    "limitations": [
+      "Cannot handle gradients if design changes",
+      "Limited to these exact 4 colors - adding more colors later requires new separation"
+    ],
+    "best_for_summary": "Perfect for logos, athletic jerseys, corporate branding with solid flat colors",
+    "expected_results": {
+      "channel_count": 4,
+      "quality_rating": "excellent",
+      "print_complexity": "low",
+      "relative_cost": "low",
+      "setup_time": "15-30 minutes"
+    },
+    "technical_notes": {
+      "halftone_frequency": 0,
+      "recommended_angles": [0, 0, 0, 0],
+      "screen_mesh": "156-200 (high mesh for fine detail)",
+      "ink_type": "Plastisol recommended for opacity, water-based acceptable",
+      "underbase": "White underbase recommended if printing on dark garments"
+    }
+  },
+  
+  "alternative_1": {
+    "method": "index_color",
+    "method_display_name": "Index Color Separation",
+    "score": 68,
+    "confidence": 0.68,
+    "reasoning": "Index color would work but is unnecessarily complex for this simple 4-color vector design. It would add dithering where none is needed.",
+    "key_strengths": [
+      "Would handle the 4 colors adequately",
+      "Some gradient capability if needed later"
+    ],
+    "limitations": [
+      "Over-engineered for flat color artwork",
+      "May introduce unwanted dithering",
+      "No quality advantage over spot color",
+      "Higher complexity for same result"
+    ],
+    "expected_results": {
+      "channel_count": 4,
+      "quality_rating": "good",
+      "print_complexity": "moderate",
+      "relative_cost": "medium"
+    }
+  },
+  
+  "alternative_2": {
+    "method": "hybrid_ai",
+    "method_display_name": "Hybrid AI Separation",
+    "score": 55,
+    "confidence": 0.55,
+    "reasoning": "Not recommended - this method is for complex mixed content, but image is purely vector with no photographic elements.",
+    "key_strengths": [
+      "Would handle the vector content well"
+    ],
+    "limitations": [
+      "Massive overkill for simple vector art",
+      "Long processing time unnecessary",
+      "No quality benefit",
+      "Much higher complexity"
+    ],
+    "expected_results": {
+      "channel_count": 4,
+      "quality_rating": "excellent",
+      "print_complexity": "very_high",
+      "relative_cost": "high"
+    }
+  },
+  
+  "methods_not_recommended": [
+    {
+      "method": "simulated_process",
+      "reason": "No photographic content or gradients present. Halftone screens would degrade the sharp edges unnecessarily."
+    },
+    {
+      "method": "cmyk",
+      "reason": "Custom Pantone colors in palette would not be utilized. CMYK cannot match the specific reds, blues, and golds in your palette."
+    },
+    {
+      "method": "rgb",
+      "reason": "Not suitable for screen printing. Would lose the Pantone color accuracy and create registration issues."
+    }
+  ],
+  
+  "overall_analysis": "This is a textbook case for spot color separation. Every indicator points to traditional spot color: low color count, Pantone matches, vector art, sharp edges, no gradients. Confidence is very high (96%) - this separation method will deliver excellent results with minimal cost and complexity. Alternative methods would either over-complicate the process or compromise quality.",
+  
+  "printer_tips": [
+    "Use high mesh screens (156-200) to capture the sharp vector edges",
+    "Print in this order for best registration: 1) Gold (lightest), 2) Red, 3) Navy Blue, 4) Black (darkest)",
+    "Consider adding a white underbase if printing on dark garments to maintain color vibrancy",
+    "Flash cure between colors if printing wet-on-wet to prevent color mixing",
+    "These Pantone colors are readily available - order exact matches for perfect color reproduction"
+  ]
+}
+```
+
+---
+
+## Error Handling
+
+### Handle API Failures
+
+```python
+def get_ai_recommendation_with_fallback(
+    color_count: int,
+    palette_colors: List[Dict],
+    image_characteristics: Dict
+) -> Dict:
+    """
+    Get AI recommendation with automatic fallback to rule-based
+    
+    Args:
+        color_count: Number of colors
+        palette_colors: Color palette
+        image_characteristics: Image analysis data
+        
+    Returns:
+        Recommendation dictionary
+    """
+    try:
+        # Build prompt
+        prompt = build_recommendation_prompt(
+            color_count,
+            palette_colors,
+            image_characteristics
+        )
+        
+        # Call Gemini API
+        response = model.generate_content(prompt)
+        
+        # Parse response
+        parsed = parse_gemini_response(response.text)
+        
+        if parsed and validate_response(parsed):
+            return parsed
+        else:
+            print("Invalid AI response format, using fallback")
+            return get_rule_based_recommendation(
+                color_count,
+                palette_colors,
+                image_characteristics
+            )
+            
+    except Exception as e:
+        print(f"AI recommendation failed: {e}")
+        return get_rule_based_recommendation(
+            color_count,
+            palette_colors,
+            image_characteristics
+        )
+
+def get_rule_based_recommendation(
+    color_count: int,
+    palette_colors: List[Dict],
+    image_characteristics: Dict
+) -> Dict:
+    """
+    Simple rule-based fallback when AI unavailable
+    """
+    edge_type = image_characteristics.get('edge_type', 'mixed')
+    has_gradients = image_characteristics.get('has_gradients', False)
+    texture_type = image_characteristics.get('texture_type', 'mixed')
+    
+    # Simple decision tree
+    if color_count <= 6 and edge_type == 'sharp' and not has_gradients:
+        method = 'spot_color'
+        score = 85
+    elif texture_type == 'photo' and has_gradients:
+        method = 'simulated_process'
+        score = 82
+    elif 6 <= color_count <= 12:
+        method = 'index_color'
+        score = 78
+    else:
+        method = 'simulated_process'
+        score = 75
+    
+    return {
+        'primary_recommendation': {
+            'method': method,
+            'method_display_name': method.replace('_', ' ').title(),
+            'score': score,
+            'confidence': 0.75,
+            'reasoning': 'Automatic recommendation based on image characteristics (AI unavailable)',
+            'key_strengths': ['Suitable for image type'],
+            'limitations': ['AI analysis unavailable for detailed recommendation'],
+            'expected_results': {
+                'channel_count': color_count,
+                'quality_rating': 'good',
+                'print_complexity': 'moderate',
+                'relative_cost': 'medium'
+            }
+        },
+        'alternative_1': {'method': 'index_color', 'score': 70},
+        'alternative_2': {'method': 'cmyk', 'score': 60}
+    }
+```
+
+---
+
+## Prompt Optimization Tips
+
+### 1. Be Specific with Image Data
+- Always include actual numbers, not vague descriptions
+- Reference specific data points in examples
+- Use consistent terminology
+
+### 2. Provide Context
+- Explain screen printing constraints
+- Describe real-world printing scenarios
+- Include cost and time considerations
+
+### 3. Request Structured Output
+- Use JSON for easy parsing
+- Specify exact field names
+- Require specific value types/ranges
+
+### 4. Include Examples
+- Show good vs. bad recommendations
+- Demonstrate proper reasoning
+- Illustrate score calibration
+
+### 5. Handle Edge Cases
+- Mixed characteristics (gradients + sharp edges)
+- Borderline color counts (6-7 colors)
+- Conflicting indicators
+
+---
+
+## Testing the Prompt
+
+### Test Cases
+
+```python
+test_cases = [
+    {
+        'name': 'Simple Logo',
+        'input': {
+            'color_count': 3,
+            'edge_type': 'sharp',
+            'has_gradients': False,
+            'texture_type': 'vector'
+        },
+        'expected_method': 'spot_color',
+        'expected_score': '>90'
+    },
+    {
+        'name': 'Complex Photo',
+        'input': {
+            'color_count': 8,
+            'edge_type': 'soft',
+            'has_gradients': True,
+            'texture_type': 'photo'
+        },
+        'expected_method': 'simulated_process',
+        'expected_score': '>85'
+    },
+    {
+        'name': 'Mixed Content',
+        'input': {
+            'color_count': 10,
+            'edge_type': 'mixed',
+            'has_gradients': True,
+            'texture_type': 'mixed'
+        },
+        'expected_method': 'hybrid_ai',
+        'expected_score': '>75'
+    }
+]
+
+def run_prompt_tests():
+    """Test prompt with various scenarios"""
+    for test in test_cases:
+        print(f"\nTesting: {test['name']}")
+        response = get_ai_recommendation(**test['input'])
+        
+        method = response['primary_recommendation']['method']
+        score = response['primary_recommendation']['score']
+        
+        print(f"  Expected: {test['expected_method']}")
+        print(f"  Got: {method}")
+        print(f"  Score: {score}")
+        
+        assert method == test['expected_method'], f"Method mismatch!"
+```
+
+---
+
+## Summary
+
+This prompt specification provides:
+
+✅ **Comprehensive Context** - AI understands screen printing domain  
+✅ **Detailed Method Descriptions** - Clear characteristics of each approach  
+✅ **Structured Input** - Consistent data format from Analyze/Color Match units  
+✅ **Structured Output** - Easy-to-parse JSON response  
+✅ **Fallback Strategy** - Rule-based backup when AI unavailable  
+✅ **Validation** - Response checking and error handling  
+✅ **Real-World Focus** - Practical printing considerations  
+
+The prompt is designed to produce consistent, accurate, and actionable recommendations that integrate seamlessly with the GIMP plugin workflow.
+
+---
+
+**Next Steps:**
+1. Test prompt with various image types
+2. Refine based on AI responses
+3. Implement caching for similar images
+4. Add user feedback loop to improve recommendations
+
+*End of Gemini API Prompt Specification*
