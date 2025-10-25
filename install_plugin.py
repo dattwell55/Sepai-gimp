@@ -91,55 +91,72 @@ def install_plugin():
         print(f"Removing existing installation...")
         shutil.rmtree(install_dir)
 
-    # Create installation directory
-    print(f"Creating {install_dir}...")
-    install_dir.mkdir(parents=True, exist_ok=True)
+    # GIMP 3.0 requires each plugin in its own directory
+    # with the plugin file matching the directory name
 
-    # Copy plugin files (all 3 steps)
-    plugin_files = [
-        'analyze_plugin.py',
-        'color_match_plugin.py',
-        'separation_plugin.py'
+    plugins_info = [
+        {
+            'source': 'analyze_plugin.py',
+            'dir_name': 'ai-separation-analyze',
+            'plugin_name': 'ai-separation-analyze.py',
+            'label': 'Analyze Image (Step 1)'
+        },
+        {
+            'source': 'color_match_plugin.py',
+            'dir_name': 'ai-separation-color-match',
+            'plugin_name': 'ai-separation-color-match.py',
+            'label': 'Color Match (Step 2)'
+        },
+        {
+            'source': 'separation_plugin.py',
+            'dir_name': 'ai-separation-separate',
+            'plugin_name': 'ai-separation-separate.py',
+            'label': 'Separate Colors (Step 3)'
+        }
     ]
 
-    for plugin_file_name in plugin_files:
-        print(f"Copying {plugin_file_name}...")
-        plugin_file = os.path.join(source_dir, plugin_file_name)
-        if not os.path.exists(plugin_file):
-            print(f"WARNING: {plugin_file_name} not found at {plugin_file}")
-            print(f"  Skipping this plugin...")
+    # Shared directories (core, ui, prompts)
+    core_dir = os.path.join(source_dir, 'core')
+    ui_dir = os.path.join(source_dir, 'ui')
+    prompts_dir = os.path.join(source_dir, 'prompts')
+
+    # Install each plugin in its own directory
+    for plugin_info in plugins_info:
+        plugin_source = os.path.join(source_dir, plugin_info['source'])
+
+        if not os.path.exists(plugin_source):
+            print(f"WARNING: {plugin_info['source']} not found, skipping...")
             continue
 
-        shutil.copy2(plugin_file, install_dir / plugin_file_name)
+        # Create plugin directory
+        plugin_install_dir = plugin_dir / plugin_info['dir_name']
+        print(f"\nInstalling {plugin_info['label']}...")
+        print(f"  Directory: {plugin_install_dir}")
 
-    # Copy core modules
-    print("Copying core/ directory...")
-    core_dir = os.path.join(source_dir, 'core')
-    if not os.path.exists(core_dir):
-        print(f"ERROR: core/ directory not found at {core_dir}")
-        return False
+        if plugin_install_dir.exists():
+            shutil.rmtree(plugin_install_dir)
 
-    shutil.copytree(core_dir, install_dir / 'core', dirs_exist_ok=True)
+        plugin_install_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy UI directory (if exists)
-    ui_dir = os.path.join(source_dir, 'ui')
-    if os.path.exists(ui_dir):
-        print("Copying ui/ directory...")
-        shutil.copytree(ui_dir, install_dir / 'ui', dirs_exist_ok=True)
+        # Copy plugin file with correct name
+        print(f"  Copying {plugin_info['source']} -> {plugin_info['plugin_name']}")
+        shutil.copy2(plugin_source, plugin_install_dir / plugin_info['plugin_name'])
 
-    # Copy prompts directory (if exists)
-    prompts_dir = os.path.join(source_dir, 'prompts')
-    if os.path.exists(prompts_dir):
-        print("Copying prompts/ directory...")
-        shutil.copytree(prompts_dir, install_dir / 'prompts', dirs_exist_ok=True)
+        # Copy shared modules to each plugin directory
+        if os.path.exists(core_dir):
+            shutil.copytree(core_dir, plugin_install_dir / 'core', dirs_exist_ok=True)
 
-    # Make executable on Unix-like systems
-    if platform.system() != "Windows":
-        for plugin_file_name in plugin_files:
-            plugin_path = install_dir / plugin_file_name
-            if plugin_path.exists():
-                os.chmod(plugin_path, 0o755)
-                print(f"Made {plugin_path} executable")
+        if os.path.exists(ui_dir):
+            shutil.copytree(ui_dir, plugin_install_dir / 'ui', dirs_exist_ok=True)
+
+        if os.path.exists(prompts_dir):
+            shutil.copytree(prompts_dir, plugin_install_dir / 'prompts', dirs_exist_ok=True)
+
+        # Make executable on Unix-like systems
+        if platform.system() != "Windows":
+            plugin_file_path = plugin_install_dir / plugin_info['plugin_name']
+            os.chmod(plugin_file_path, 0o755)
+            print(f"  Made {plugin_info['plugin_name']} executable")
 
     print()
     print("="*60)
@@ -174,21 +191,39 @@ def uninstall_plugin():
         print("ERROR: Could not determine GIMP plugin directory")
         return False
 
-    install_dir = Path(plugin_dir) / 'ai-color-separation'
+    plugin_dir = Path(plugin_dir)
 
-    if not install_dir.exists():
+    # List of plugin directories to remove
+    plugin_dirs = [
+        'ai-separation-analyze',
+        'ai-separation-color-match',
+        'ai-separation-separate',
+        'ai-color-separation'  # Old structure, in case it exists
+    ]
+
+    found_any = False
+    for dir_name in plugin_dirs:
+        install_dir = plugin_dir / dir_name
+        if install_dir.exists():
+            found_any = True
+            print(f"Found: {install_dir}")
+
+    if not found_any:
         print("Plugin not installed")
         return False
 
-    response = input(f"Remove plugin from {install_dir}? (y/n): ")
+    response = input(f"Remove all AI Separation plugins? (y/n): ")
     if response.lower() != 'y':
         print("Uninstall cancelled")
         return False
 
-    shutil.rmtree(install_dir)
-    print(f"Plugin removed from {install_dir}")
-    print("Restart GIMP to complete uninstallation")
+    for dir_name in plugin_dirs:
+        install_dir = plugin_dir / dir_name
+        if install_dir.exists():
+            shutil.rmtree(install_dir)
+            print(f"Removed: {install_dir}")
 
+    print("Restart GIMP to complete uninstallation")
     return True
 
 
