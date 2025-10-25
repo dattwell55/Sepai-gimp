@@ -25,7 +25,13 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Gegl', '0.4')
 from gi.repository import Gimp, Gtk, GObject, GLib, Gegl
 
-import numpy as np
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    print("Warning: NumPy not available. Some features will be limited.")
+
 import json
 import sys
 import os
