@@ -61,8 +61,9 @@ class AnalyzePlugin(Gimp.PlugIn):
             self.run, None
         )
 
+        procedure.set_image_types("RGB*, GRAY*")
         procedure.set_menu_label("Analyze Image (Step 1)")
-        procedure.add_menu_path('<Image>/Filters/AI Separation/')
+        procedure.add_menu_path('<Image>/Filters/AI Separation')
 
         procedure.set_documentation(
             "Analyze image for AI-powered color separation",

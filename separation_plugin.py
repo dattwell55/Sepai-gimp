@@ -73,8 +73,9 @@ class SeparationPlugin(Gimp.PlugIn):
             self.run, None
         )
 
+        procedure.set_image_types("RGB*, GRAY*")
         procedure.set_menu_label("Separate Colors (Step 3)")
-        procedure.add_menu_path('<Image>/Filters/AI Separation/')
+        procedure.add_menu_path('<Image>/Filters/AI Separation')
 
         procedure.set_documentation(
             "AI-powered color separation for screen printing",
