@@ -930,8 +930,8 @@ class SepAI(Gimp.PlugIn):
         )
 
         procedure.set_image_types("RGB*, GRAY*")
-        procedure.set_menu_label("SepAI Color Separation...")
-        procedure.add_menu_path('<Image>/Filters/SepAI/')
+        procedure.set_menu_label("AI Color Separation...")
+        procedure.add_menu_path('<Image>/Filters/SepAI')
 
         procedure.set_documentation(
             "AI-powered color separation for screen printing",
