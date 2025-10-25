@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python separation/test_phase2.py:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

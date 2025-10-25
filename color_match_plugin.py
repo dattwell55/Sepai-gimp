@@ -70,9 +70,9 @@ class ColorMatchPlugin(Gimp.PlugIn):
             self.run, None
         )
 
-        procedure.set_image_types("RGB*, GRAY*")
-        procedure.set_menu_label("Color Match (Step 2)")
-        procedure.add_menu_path('<Image>/Filters/AI Separation')
+        procedure.set_image_types("*")
+        procedure.set_menu_label("AI Separation: Color Match (Step 2)")
+        procedure.add_menu_path('<Image>/Filters/Render')
 
         procedure.set_documentation(
             "Generate optimal color palette for screen printing",
